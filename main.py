@@ -1,5 +1,5 @@
 # program to create item inventory
-from numpy import empty
+from numpy import empty, true_divide
 import pygame
 import os
 from pygame.locals import *
@@ -40,6 +40,9 @@ ITEMS = {
 }
 FONT = pygame.font.Font("assets/DTM-Sans.otf", 24)
 DUST = [load_image(f"assets/gui/dust_{x}.png") for x in range(5)]
+CURSOR_ICONS = {
+    "magnet": load_image("assets/gui/magnet_cursor_icon.png"),
+}
 
 
 class Dust():
@@ -61,8 +64,9 @@ class Cursor():
         self.box = pygame.Rect(self.position[0], self.position[1], 1, 1)
         self.cooldown = 0
         self.pressed = None
+        self.magnet = False
 
-    def update(self) -> None:
+    def update(self, keys) -> None:
         self.position = pygame.mouse.get_pos()
         self.box = pygame.Rect(self.position[0], self.position[1], 1, 1)
         self.pressed = pygame.mouse.get_pressed()
@@ -71,6 +75,12 @@ class Cursor():
             self.item.draw(self.position[0], self.position[1], 3)
         if self.cooldown > 0:
             self.cooldown -= 1
+
+        self.magnet = True if keys[K_LSHIFT] and self.item is not None else False
+        if self.magnet:
+            image = pygame.transform.scale(
+                CURSOR_ICONS["magnet"], (6*3, 6*3))
+            win.blit(image, (self.position[0] + 2*3, self.position[1] + 12*3))
 
     def set_cooldown(self) -> None:
         self.cooldown = 10
@@ -125,7 +135,19 @@ class Cell():
         win.blit(image, position)
 
         if self.item is not None:
-            if cursor.box.colliderect(cell_box) and cursor.pressed[0] and cursor.item is None and cursor.cooldown == 0:
+            if cursor.box.colliderect(cell_box) and cursor.magnet and cursor.item.name == self.item.name:
+                amount = stack_limit - cursor.item.amount
+                if self.item.amount + cursor.item.amount <= stack_limit:
+                    cursor.item.amount += self.item.amount
+                    self.item = None
+                else:
+                    cursor.item.amount += amount
+                    self.item.amount -= amount
+
+                self.particles.append(Dust())
+                cursor.set_cooldown()
+
+            elif cursor.box.colliderect(cell_box) and cursor.pressed[0] and cursor.item is None and cursor.cooldown == 0:
                 cursor.item = self.item
                 self.item = None
                 self.particles.append(Dust())
@@ -148,6 +170,13 @@ class Cell():
             if cursor.box.colliderect(cell_box) and cursor.pressed[0] and cursor.item is not None and cursor.cooldown == 0:
                 self.item = cursor.item
                 cursor.item = None
+                self.particles.append(Dust())
+                cursor.set_cooldown()
+            elif cursor.box.colliderect(cell_box) and cursor.pressed[2] and cursor.item is not None and cursor.item.amount > 1 and cursor.cooldown == 0:
+                half = cursor.item.amount//2
+                self.item = cursor.item.copy()
+                self.item.amount = half
+                cursor.item.amount -= half
                 self.particles.append(Dust())
                 cursor.set_cooldown()
 
@@ -211,7 +240,7 @@ def main():
         win.fill((0, 0, 0))
         inventory.update(cursor)
         inventory2.update(cursor)
-        cursor.update()
+        cursor.update(keys)
 
         clock.tick(FPS)  # Pauses to keep track with FPS constant
         pygame.display.update()
