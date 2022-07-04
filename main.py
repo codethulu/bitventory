@@ -227,7 +227,7 @@ class Inventory():
             image = pygame.transform.scale(self.image, (10*scale, 10*scale))
             win.blit(image, (x, y))
 
-    def __init__(self, name, rows, columns, x, y, scale, stack_limit) -> None:
+    def __init__(self, name, rows, columns, x, y, scale=3, stack_limit=99) -> None:
         self.name = name
         self.rows = rows
         self.columns = columns
