@@ -1,5 +1,4 @@
 # program to create item inventory
-from numpy import empty, true_divide
 import pygame
 import os
 from pygame.locals import *
@@ -45,6 +44,7 @@ CURSOR_ICONS = {
 }
 INVENTORY_SORTING_BUTTONS = {
     "name": load_image("assets/gui/sort_name.jpg"),
+    "amount": load_image("assets/gui/sort_amount.jpg"),
 
 }
 
@@ -168,15 +168,27 @@ class Cell():
                 cursor.item = None
                 self.particles.append(Dust())
                 cursor.set_cooldown()
+            elif cursor.box.colliderect(cell_box) and cursor.pressed[0] and cursor.item is not None and cursor.item.name == self.item.name and cursor.cooldown == 0:
+                amount = stack_limit - self.item.amount
+                self.item.amount += amount
+                cursor.item.amount -= amount
+                self.particles.append(Dust())
+                cursor.set_cooldown()
+            elif cursor.box.colliderect(cell_box) and cursor.pressed[0] and cursor.item is not None and cursor.cooldown == 0:
+                temp = cursor.item.copy()
+                cursor.item = self.item
+                self.item = temp
+                self.particles.append(Dust())
+                cursor.set_cooldown()
             else:
                 self.item.draw(position[0], position[1], scale)
-        else:
-            if cursor.box.colliderect(cell_box) and cursor.pressed[0] and cursor.item is not None and cursor.cooldown == 0:
+        elif cursor.item is not None:
+            if cursor.box.colliderect(cell_box) and cursor.pressed[0] and cursor.cooldown == 0:
                 self.item = cursor.item
                 cursor.item = None
                 self.particles.append(Dust())
                 cursor.set_cooldown()
-            elif cursor.box.colliderect(cell_box) and cursor.pressed[2] and cursor.item is not None and cursor.item.amount > 1 and cursor.cooldown == 0:
+            elif cursor.box.colliderect(cell_box) and cursor.pressed[2] and cursor.item.amount > 1 and cursor.cooldown == 0:
                 half = cursor.item.amount//2
                 self.item = cursor.item.copy()
                 self.item.amount = half
@@ -195,7 +207,7 @@ class Inventory():
     class Inventory_Sorting_Button():
         def __init__(self, name, inv) -> None:
             self.name = name
-            self.image = INVENTORY_SORTING_BUTTONS["name"]
+            self.image = INVENTORY_SORTING_BUTTONS[name]
             self.parent = inv
 
         def update(self, x, y, scale, cursor) -> None:
@@ -206,6 +218,12 @@ class Inventory():
                 if cursor.pressed[0]:
 
                     self.parent.sort_item_name()
+                    match self.name:
+                        case "name":
+                            self.parent.sort_item_name()
+                        case "amount":
+                            self.parent.sort_item_amount()
+
             image = pygame.transform.scale(self.image, (10*scale, 10*scale))
             win.blit(image, (x, y))
 
@@ -218,18 +236,28 @@ class Inventory():
         self.scale = scale
         self.stack_limit = stack_limit
         self.buttons = [
-            self.Inventory_Sorting_Button("name", self)
+            self.Inventory_Sorting_Button("name", self),
+            self.Inventory_Sorting_Button("amount", self)
         ]
 
     def add_item(self, item) -> None:
         for row in self.cells:
             for cell in row:
+
                 if cell.item is None:
                     cell.item = item
                     return
                 elif cell.item.name == item.name and cell.item.amount + item.amount <= self.stack_limit and item.stackable:
                     cell.item.amount += item.amount
                     return
+                elif cell.item.name == item.name and item.stackable and self.stack_limit - cell.item.amount > 0:
+                    amount = self.stack_limit - cell.item.amount
+                    cell.item.amount += amount
+                    item.amount -= amount
+                    if item.amount > 0:
+                        self.add_item(item.copy())
+                    return
+
         print("Inventory is full")
 
     def get_item_list(self) -> list:
@@ -270,7 +298,7 @@ class Inventory():
 
         for i, b in enumerate(self.buttons):
             b.update(self.position[0]+20*self.columns *
-                     self.scale - 9 * self.scale, self.position[1] + 4*self.scale, self.scale, cursor)
+                     self.scale - 9 * self.scale - i*12*self.scale, self.position[1] + 4*self.scale, self.scale, cursor)
 
         for i, row in enumerate(self.cells):
             for j, cell in enumerate(row):
