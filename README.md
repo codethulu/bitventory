@@ -10,14 +10,21 @@
 
 To create a new inventory window, initialise as so:
 
+NAME- Name of the window
+
 ROWS - The amount of columns the inventory window has
+
 COLUMNS - The amount of columns the inventory window has
+
 X - x position of the window
+
 Y - y position of the window
+
 SCALE - The size of the inventory window (3 default)
+
 STACK_LIMIT - The maximum size items in the inventory can stack to (99 default)
 
-``inventory = Inventory("Test", ROWS, COLUMNS, X, Y, SCALE, STACK_LIMIT)``
+``inventory = Inventory(NAME, ROWS, COLUMNS, X, Y, SCALE, STACK_LIMIT)``
 
 ## Example
 
