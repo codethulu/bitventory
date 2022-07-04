@@ -214,11 +214,17 @@ class Inventory():
 
     def update(self, cursor) -> None:
         pygame.draw.rect(
-            win, (31, 31, 31), (self.position[0], self.position[1], self.columns*16*self.scale, self.rows*16*self.scale))
+            win, (31, 31, 31), (self.position[0], self.position[1], self.columns*20*self.scale + 4*self.scale, self.rows*20*self.scale + 18*self.scale))
+
+        inventory_title = FONT.render(
+            self.name, 1, (255, 255, 255))
+        win.blit(inventory_title,
+                 (self.position[0] + 4*self.scale, self.position[1]+4*self.scale))
+
         for i, row in enumerate(self.cells):
             for j, cell in enumerate(row):
-                cell.update(self.position[0]+(i*20*self.scale),
-                            self.position[1]+(j*20*self.scale), self.scale, self.stack_limit, cursor)
+                cell.update(self.position[0]+(i*20*self.scale) + 2*self.scale,
+                            self.position[1]+(j*20*self.scale) + 16*self.scale, self.scale, self.stack_limit, cursor)
 
 
 def main():
