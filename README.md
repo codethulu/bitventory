@@ -36,6 +36,8 @@ The ``main()`` method provided initialises an example playground. Two inventory 
 
 🔠 Name inventory windows
 
+✨ Visual effects such as multiple item stacking and animations 
+
 ⏳ Sort by name and stack size using the buttons!
 
 🧲 Holding [SHIFT] while an item is picked up will allow you to automatically pick similar items up on hover
