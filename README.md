@@ -40,7 +40,9 @@ The ``main()`` method provided initialises an example playground. Two inventory 
 
 ⏳ Sort by name and stack size using the buttons!
 
-🧲 Holding [SHIFT] while an item is picked up will allow you to automatically pick similar items up on hover
+🧲 Holding [SHIFT] while an item is picked up will allow you to automatically pick similar items up on hover!
 
 🖖 You can split item stacks using [RIGHT CLICK]
+
+![magent-inventory](https://user-images.githubusercontent.com/45674799/177222020-514542d9-7000-4451-b60a-628e1aa62f42.gif)
 
