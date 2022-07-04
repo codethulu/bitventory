@@ -1,4 +1,5 @@
 # program to create item inventory
+from numpy import empty
 import pygame
 import os
 from pygame.locals import *
@@ -27,28 +28,95 @@ ITEMS = {
     "silver_arrow": load_image("assets/items/silver_arrow.png"),
     "amethyst_clump": load_image("assets/items/amethyst_clump.png"),
     "iron_bar": load_image("assets/items/iron_bar.png"),
+    "silver_bar": load_image("assets/items/silver_bar.png"),
+    "gold_bar": load_image("assets/items/gold_bar.png"),
+    "stick": load_image("assets/items/stick.png"),
+    "gold_sword": load_image("assets/items/gold_sword.png"),
+    "diamond_clump": load_image("assets/items/diamond_clump.png"),
+    "bone": load_image("assets/items/bone.png"),
+    "flint": load_image("assets/items/flint.png"),
+    "arrow": load_image("assets/items/arrow.png"),
+    "book": load_image("assets/items/book.png"),
 }
 FONT = pygame.font.Font("assets/DTM-Sans.otf", 24)
+DUST = [load_image(f"assets/gui/dust_{x}.png") for x in range(5)]
+
+
+class Dust():
+    def __init__(self) -> None:
+        self.life = 12
+
+    def update(self, x, y, scale) -> None:
+        self.life -= 1
+        if self.life > 0:
+            image = pygame.transform.scale(
+                DUST[4-(self.life//3)], (16*scale, 16*scale))
+            win.blit(image, (x + 2*scale, y + 2*scale))
+
+
+class Cursor():
+    def __init__(self) -> None:
+        self.item = None
+        self.position = pygame.mouse.get_pos()
+        self.box = pygame.Rect(self.position[0], self.position[1], 1, 1)
+        self.cooldown = 0
+        self.pressed = None
+
+    def update(self) -> None:
+        self.position = pygame.mouse.get_pos()
+        self.box = pygame.Rect(self.position[0], self.position[1], 1, 1)
+        self.pressed = pygame.mouse.get_pressed()
+
+        if self.item is not None:
+            self.item.draw(self.position[0], self.position[1], 3)
+        if self.cooldown > 0:
+            self.cooldown -= 1
+
+    def set_cooldown(self) -> None:
+        self.cooldown = 10
 
 
 class Item():
     def __init__(self, name, amount) -> None:
         self.name = name
         self.amount = amount
+        self.stackable = True
+
+    def draw(self, x, y, scale) -> None:
+        image = pygame.transform.scale(
+            ITEMS[self.name], (16*scale, 16*scale))
+        if self.amount > 1:
+            image2 = pygame.transform.rotate(image, 10)
+            win.blit(image2, (x + 3 *
+                              scale, y))
+        if self.amount > 50:
+            image2 = pygame.transform.rotate(image, -20)
+            win.blit(image2, (x + 1 *
+                              scale, y))
+
+        win.blit(image, (x + 2*scale, y + 2*scale))
+
+        if self.amount > 1:
+            item_count = FONT.render(
+                str(self.amount), 1, (255, 255, 255))
+            win.blit(item_count, (x+12*scale, y+10*scale))
+
+    def copy(self):
+        return Item(self.name, self.amount)
 
 
 class Cell():
 
     def __init__(self, item=None) -> None:
         self.item = item
+        self.particles = []
 
-    def update(self, x, y, scale) -> None:
+    def update(self, x, y, scale, stack_limit, cursor) -> None:
         position = (x, y)
-        cursor_pos = pygame.mouse.get_pos()
-        cursor_box = pygame.Rect(cursor_pos[0], cursor_pos[1], 1, 1)
+
         cell_box = pygame.Rect(position[0], position[1], 20*scale, 20*scale)
 
-        if cursor_box.colliderect(cell_box):
+        if cursor.box.colliderect(cell_box):
             image = pygame.transform.scale(
                 CELL_SELECTED, (20*scale, 20*scale))
         else:
@@ -57,19 +125,37 @@ class Cell():
         win.blit(image, position)
 
         if self.item is not None:
-            image = pygame.transform.scale(
-                ITEMS[self.item.name], (16*scale, 16*scale))
-            if self.item.amount > 1:
-                image2 = pygame.transform.rotate(image, 10)
-                win.blit(image2, (position[0] + 3 *
-                         scale, position[1]))
+            if cursor.box.colliderect(cell_box) and cursor.pressed[0] and cursor.item is None and cursor.cooldown == 0:
+                cursor.item = self.item
+                self.item = None
+                self.particles.append(Dust())
+                cursor.set_cooldown()
+            elif cursor.box.colliderect(cell_box) and cursor.pressed[2] and cursor.item is None and self.item.amount > 1 and cursor.cooldown == 0:
+                half = self.item.amount//2
+                cursor.item = self.item.copy()
+                cursor.item.amount = half
+                self.item.amount -= half
+                self.particles.append(Dust())
+                cursor.set_cooldown()
+            elif cursor.box.colliderect(cell_box) and cursor.pressed[0] and cursor.item is not None and cursor.item.name == self.item.name and self.item.amount + cursor.item.amount <= stack_limit and cursor.cooldown == 0:
+                self.item.amount += cursor.item.amount
+                cursor.item = None
+                self.particles.append(Dust())
+                cursor.set_cooldown()
+            else:
+                self.item.draw(position[0], position[1], scale)
+        else:
+            if cursor.box.colliderect(cell_box) and cursor.pressed[0] and cursor.item is not None and cursor.cooldown == 0:
+                self.item = cursor.item
+                cursor.item = None
+                self.particles.append(Dust())
+                cursor.set_cooldown()
 
-            win.blit(image, (position[0] + 2*scale, position[1] + 2*scale))
-
-            if self.item.amount > 1:
-                item_count = FONT.render(
-                    str(self.item.amount), 1, (255, 255, 255))
-                win.blit(item_count, (position[0], position[1]))
+        if len(self.particles) > 0:
+            for p in self.particles:
+                p.update(x, y, scale)
+                if p.life < 1:
+                    self.particles.remove(p)
 
 
 class Inventory():
@@ -88,7 +174,7 @@ class Inventory():
                 if cell.item is None:
                     cell.item = item
                     return
-                elif cell.item.name == item.name and cell.item.amount + item.amount <= self.stack_limit:
+                elif cell.item.name == item.name and cell.item.amount + item.amount <= self.stack_limit and item.stackable:
                     cell.item.amount += item.amount
                     return
         print("Inventory is full")
@@ -97,16 +183,18 @@ class Inventory():
         # order the items in cells by name
         pass
 
-    def update(self) -> None:
+    def update(self, cursor) -> None:
 
         for i, row in enumerate(self.cells):
             for j, cell in enumerate(row):
                 cell.update(self.position[0]+(i*20*self.scale),
-                            self.position[1]+(j*20*self.scale), self.scale)
+                            self.position[1]+(j*20*self.scale), self.scale, self.stack_limit, cursor)
 
 
 def main():
-    inventory = Inventory("Test", 10, 6, 100, 100, 3, 99)
+    inventory = Inventory("Test", 10, 6, 50, 100, 3, 99)
+    inventory2 = Inventory("Test", 3, 3, 700, 100, 3, 99)
+    cursor = Cursor()
     run = True
     while run:
         for event in pygame.event.get():  # Test to see if the usr quits the game, if so, quit
@@ -121,7 +209,9 @@ def main():
             inventory.add_item(Item(random.choice(list(ITEMS.keys())), 1))
 
         win.fill((0, 0, 0))
-        inventory.update()
+        inventory.update(cursor)
+        inventory2.update(cursor)
+        cursor.update()
 
         clock.tick(FPS)  # Pauses to keep track with FPS constant
         pygame.display.update()
