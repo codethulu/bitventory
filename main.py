@@ -192,7 +192,7 @@ class Inventory():
         self.name = name
         self.rows = rows
         self.columns = columns
-        self.cells = [[Cell() for i in range(columns)] for j in range(rows)]
+        self.cells = [[Cell() for i in range(rows)] for j in range(columns)]
         self.position = (x, y)
         self.scale = scale
         self.stack_limit = stack_limit
@@ -213,7 +213,8 @@ class Inventory():
         pass
 
     def update(self, cursor) -> None:
-
+        pygame.draw.rect(
+            win, (31, 31, 31), (self.position[0], self.position[1], self.columns*16*self.scale, self.rows*16*self.scale))
         for i, row in enumerate(self.cells):
             for j, cell in enumerate(row):
                 cell.update(self.position[0]+(i*20*self.scale),
@@ -221,7 +222,7 @@ class Inventory():
 
 
 def main():
-    inventory = Inventory("Test", 10, 6, 50, 100, 3, 99)
+    inventory = Inventory("Test", 6, 10, 50, 100, 3, 99)
     inventory2 = Inventory("Test", 3, 3, 700, 100, 3, 99)
     cursor = Cursor()
     run = True
