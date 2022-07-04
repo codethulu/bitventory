@@ -192,7 +192,7 @@ class Inventory():
         self.name = name
         self.rows = rows
         self.columns = columns
-        self.cells = [[Cell() for i in range(rows)] for j in range(columns)]
+        self.cells = [[Cell() for i in range(columns)] for j in range(rows)]
         self.position = (x, y)
         self.scale = scale
         self.stack_limit = stack_limit
@@ -223,8 +223,8 @@ class Inventory():
 
         for i, row in enumerate(self.cells):
             for j, cell in enumerate(row):
-                cell.update(self.position[0]+(i*20*self.scale) + 2*self.scale,
-                            self.position[1]+(j*20*self.scale) + 16*self.scale, self.scale, self.stack_limit, cursor)
+                cell.update(self.position[0]+(j*20*self.scale) + 2*self.scale,
+                            self.position[1]+(i*20*self.scale) + 16*self.scale, self.scale, self.stack_limit, cursor)
 
 
 def main():
