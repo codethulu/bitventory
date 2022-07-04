@@ -43,6 +43,10 @@ DUST = [load_image(f"assets/gui/dust_{x}.png") for x in range(5)]
 CURSOR_ICONS = {
     "magnet": load_image("assets/gui/magnet_cursor_icon.png"),
 }
+INVENTORY_SORTING_BUTTONS = {
+    "name": load_image("assets/gui/sort_name.jpg"),
+
+}
 
 
 class Dust():
@@ -188,6 +192,23 @@ class Cell():
 
 
 class Inventory():
+    class Inventory_Sorting_Button():
+        def __init__(self, name, inv) -> None:
+            self.name = name
+            self.image = INVENTORY_SORTING_BUTTONS["name"]
+            self.parent = inv
+
+        def update(self, x, y, scale, cursor) -> None:
+            button_box = pygame.Rect(
+                x, y, 10*scale, 10*scale)
+
+            if cursor.box.colliderect(button_box):
+                if cursor.pressed[0]:
+
+                    self.parent.sort_item_name()
+            image = pygame.transform.scale(self.image, (10*scale, 10*scale))
+            win.blit(image, (x, y))
+
     def __init__(self, name, rows, columns, x, y, scale, stack_limit) -> None:
         self.name = name
         self.rows = rows
@@ -196,6 +217,9 @@ class Inventory():
         self.position = (x, y)
         self.scale = scale
         self.stack_limit = stack_limit
+        self.buttons = [
+            self.Inventory_Sorting_Button("name", self)
+        ]
 
     def add_item(self, item) -> None:
         for row in self.cells:
@@ -208,9 +232,32 @@ class Inventory():
                     return
         print("Inventory is full")
 
-    def sort_items(self) -> None:
-        # order the items in cells by name
-        pass
+    def get_item_list(self) -> list:
+        item_list = []
+        for row in self.cells:
+            for cell in row:
+                if cell.item is not None:
+                    item_list.append(cell.item.copy())
+        return item_list
+
+    def clear_inventory(self) -> None:
+        for row in self.cells:
+            for cell in row:
+                cell.item = None
+
+    def sort_item_name(self) -> None:
+        item_list = self.get_item_list()
+        item_list.sort(key=lambda x: x.name)
+        self.clear_inventory()
+        for item in item_list:
+            self.add_item(item)
+
+    def sort_item_amount(self) -> None:
+        item_list = self.get_item_list()
+        item_list.sort(key=lambda x: x.amount)
+        self.clear_inventory()
+        for item in item_list:
+            self.add_item(item)
 
     def update(self, cursor) -> None:
         pygame.draw.rect(
@@ -220,6 +267,10 @@ class Inventory():
             self.name, 1, (255, 255, 255))
         win.blit(inventory_title,
                  (self.position[0] + 4*self.scale, self.position[1]+4*self.scale))
+
+        for i, b in enumerate(self.buttons):
+            b.update(self.position[0]+20*self.columns *
+                     self.scale - 9 * self.scale, self.position[1] + 4*self.scale, self.scale, cursor)
 
         for i, row in enumerate(self.cells):
             for j, cell in enumerate(row):
