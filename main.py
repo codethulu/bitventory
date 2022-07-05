@@ -21,6 +21,26 @@ def load_image(image_name):
 
 CELL = load_image("assets/gui/tile.jpg")
 CELL_SELECTED = load_image("assets/gui/tile_selected.jpg")
+ITEM_TEXTURES = {
+    "grass": load_image("assets/items/grass.png"),
+    "string": load_image("assets/items/string.png"),
+    "silver_arrow": load_image("assets/items/silver_arrow.png"),
+    "amethyst_clump": load_image("assets/items/amethyst_clump.png"),
+    "iron_bar": load_image("assets/items/iron_bar.png"),
+    "silver_bar": load_image("assets/items/silver_bar.png"),
+    "gold_bar": load_image("assets/items/gold_bar.png"),
+    "stick": load_image("assets/items/stick.png"),
+    "diamond_clump": load_image("assets/items/diamond_clump.png"),
+    "bone": load_image("assets/items/bone.png"),
+    "flint": load_image("assets/items/flint.png"),
+    "arrow": load_image("assets/items/arrow.png"),
+    "book": load_image("assets/items/book.png"),
+    "gold_sword": load_image("assets/items/gold_sword.png"),
+    "iron_sword": load_image("assets/items/iron_sword.png"),
+    "bow": load_image("assets/items/bow.png"),
+    "gold_bow": load_image("assets/items/gold_bow.png"),
+    "scythe": load_image("assets/items/scythe.png"),
+}
 ITEMS = {
     "grass": load_image("assets/items/grass.png"),
     "string": load_image("assets/items/string.png"),
@@ -30,12 +50,20 @@ ITEMS = {
     "silver_bar": load_image("assets/items/silver_bar.png"),
     "gold_bar": load_image("assets/items/gold_bar.png"),
     "stick": load_image("assets/items/stick.png"),
-    "gold_sword": load_image("assets/items/gold_sword.png"),
     "diamond_clump": load_image("assets/items/diamond_clump.png"),
     "bone": load_image("assets/items/bone.png"),
     "flint": load_image("assets/items/flint.png"),
     "arrow": load_image("assets/items/arrow.png"),
     "book": load_image("assets/items/book.png"),
+
+}
+WEAPONS = {
+    "gold_sword": load_image("assets/items/gold_sword.png"),
+    "iron_sword": load_image("assets/items/iron_sword.png"),
+    "bow": load_image("assets/items/bow.png"),
+    "gold_bow": load_image("assets/items/gold_bow.png"),
+    "scythe": load_image("assets/items/scythe.png"),
+
 }
 FONT = pygame.font.Font("assets/DTM-Sans.otf", 24)
 DUST = [load_image(f"assets/gui/dust_{x}.png") for x in range(5)]
@@ -98,7 +126,7 @@ class Item():
 
     def draw(self, x, y, scale) -> None:
         image = pygame.transform.scale(
-            ITEMS[self.name], (16*scale, 16*scale))
+            ITEM_TEXTURES[self.name], (16*scale, 16*scale))
         if self.amount > 1:
             image2 = pygame.transform.rotate(image, 10)
             win.blit(image2, (x + 3 *
@@ -117,6 +145,15 @@ class Item():
 
     def copy(self):
         return Item(self.name, self.amount)
+
+
+class Weapon(Item):
+    def __init__(self, name, amount) -> None:
+        super().__init__(name, amount)
+        self.stackable = False
+
+    def copy(self):
+        return Weapon(self.name, self.amount)
 
 
 class Cell():
@@ -163,12 +200,12 @@ class Cell():
                 self.item.amount -= half
                 self.particles.append(Dust())
                 cursor.set_cooldown()
-            elif cursor.box.colliderect(cell_box) and cursor.pressed[0] and cursor.item is not None and cursor.item.name == self.item.name and self.item.amount + cursor.item.amount <= stack_limit and cursor.cooldown == 0:
+            elif cursor.box.colliderect(cell_box) and cursor.pressed[0] and cursor.item is not None and cursor.item.name == self.item.name and self.item.amount + cursor.item.amount <= stack_limit and cursor.cooldown == 0 and self.item.stackable:
                 self.item.amount += cursor.item.amount
                 cursor.item = None
                 self.particles.append(Dust())
                 cursor.set_cooldown()
-            elif cursor.box.colliderect(cell_box) and cursor.pressed[0] and cursor.item is not None and cursor.item.name == self.item.name and cursor.cooldown == 0:
+            elif cursor.box.colliderect(cell_box) and cursor.pressed[0] and cursor.item is not None and cursor.item.name == self.item.name and cursor.cooldown == 0 and self.item.stackable:
                 amount = stack_limit - self.item.amount
                 self.item.amount += amount
                 cursor.item.amount -= amount
@@ -188,7 +225,7 @@ class Cell():
                 cursor.item = None
                 self.particles.append(Dust())
                 cursor.set_cooldown()
-            elif cursor.box.colliderect(cell_box) and cursor.pressed[2] and cursor.item.amount > 1 and cursor.cooldown == 0:
+            elif cursor.box.colliderect(cell_box) and cursor.pressed[2] and cursor.item.amount > 1 and cursor.cooldown == 0 and self.item.stackable:
                 half = cursor.item.amount//2
                 self.item = cursor.item.copy()
                 self.item.amount = half
@@ -241,22 +278,23 @@ class Inventory():
         ]
 
     def add_item(self, item) -> None:
+
         for row in self.cells:
             for cell in row:
-
                 if cell.item is None:
                     cell.item = item
                     return
-                elif cell.item.name == item.name and cell.item.amount + item.amount <= self.stack_limit and item.stackable:
-                    cell.item.amount += item.amount
-                    return
-                elif cell.item.name == item.name and item.stackable and self.stack_limit - cell.item.amount > 0:
-                    amount = self.stack_limit - cell.item.amount
-                    cell.item.amount += amount
-                    item.amount -= amount
-                    if item.amount > 0:
-                        self.add_item(item.copy())
-                    return
+                elif item.stackable and cell.item.name == item.name:
+                    if cell.item.amount + item.amount <= self.stack_limit:
+                        cell.item.amount += item.amount
+                        return
+                    elif self.stack_limit - cell.item.amount > 0:
+                        amount = self.stack_limit - cell.item.amount
+                        cell.item.amount += amount
+                        item.amount -= amount
+                        if item.amount > 0:
+                            self.add_item(item.copy())
+                        return
 
         print("Inventory is full")
 
@@ -322,7 +360,8 @@ def main():
         keys = pygame.key.get_pressed()
         if keys[K_c]:
             inventory.add_item(Item(random.choice(list(ITEMS.keys())), 1))
-
+        if keys[K_w]:
+            inventory.add_item(Weapon(random.choice(list(WEAPONS.keys())), 1))
         win.fill((0, 0, 0))
         inventory.update(cursor)
         inventory2.update(cursor)
