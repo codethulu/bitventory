@@ -85,8 +85,8 @@ class Dust():
         self.life -= 1
         if self.life > 0:
             image = pygame.transform.scale(
-                DUST[4-(self.life//3)], (16*scale, 16*scale))
-            win.blit(image, (x + 2*scale, y + 2*scale))
+                DUST[4-(self.life // 3)], (16 * scale, 16 * scale))
+            win.blit(image, (x + 2 * scale, y + 2 * scale))
 
 
 class Cursor():
@@ -111,8 +111,9 @@ class Cursor():
         self.magnet = True if keys[K_LSHIFT] and self.item is not None else False
         if self.magnet:
             image = pygame.transform.scale(
-                CURSOR_ICONS["magnet"], (6*3, 6*3))
-            win.blit(image, (self.position[0] + 2*3, self.position[1] + 12*3))
+                CURSOR_ICONS["magnet"], (6 * 3, 6 * 3))
+            win.blit(image, (self.position[0] +
+                     2 * 3, self.position[1] + 12 * 3))
 
     def set_cooldown(self) -> None:
         self.cooldown = 10
@@ -136,12 +137,12 @@ class Item():
             win.blit(image2, (x + 1 *
                               scale, y))
 
-        win.blit(image, (x + 2*scale, y + 2*scale))
+        win.blit(image, (x + 2 * scale, y + 2 * scale))
 
         if self.amount > 1:
             item_count = FONT.render(
                 str(self.amount), 1, (255, 255, 255))
-            win.blit(item_count, (x+12*scale, y+10*scale))
+            win.blit(item_count, (x + 12 * scale, y + 10 * scale))
 
     def copy(self):
         return Item(self.name, self.amount)
@@ -165,18 +166,19 @@ class Cell():
     def update(self, x, y, scale, stack_limit, cursor) -> None:
         position = (x, y)
 
-        cell_box = pygame.Rect(position[0], position[1], 20*scale, 20*scale)
+        cell_box = pygame.Rect(
+            position[0], position[1], 20 * scale, 20 * scale)
 
         if cursor.box.colliderect(cell_box):
             image = pygame.transform.scale(
-                CELL_SELECTED, (20*scale, 20*scale))
+                CELL_SELECTED, (20 * scale, 20 * scale))
         else:
-            image = pygame.transform.scale(CELL, (20*scale, 20*scale))
+            image = pygame.transform.scale(CELL, (20 * scale, 20 * scale))
 
         win.blit(image, position)
 
         if self.item is not None:
-            if cursor.box.colliderect(cell_box) and cursor.magnet and cursor.item.name == self.item.name:
+            if cursor.box.colliderect(cell_box) and cursor.magnet and cursor.item.name == self.item.name and self.item.stackable:
                 amount = stack_limit - cursor.item.amount
                 if self.item.amount + cursor.item.amount <= stack_limit:
                     cursor.item.amount += self.item.amount
@@ -225,8 +227,8 @@ class Cell():
                 cursor.item = None
                 self.particles.append(Dust())
                 cursor.set_cooldown()
-            elif cursor.box.colliderect(cell_box) and cursor.pressed[2] and cursor.item.amount > 1 and cursor.cooldown == 0 and self.item.stackable:
-                half = cursor.item.amount//2
+            elif cursor.box.colliderect(cell_box) and cursor.pressed[2] and cursor.item.amount > 1 and cursor.cooldown == 0 and cursor.item.stackable:
+                half = cursor.item.amount // 2
                 self.item = cursor.item.copy()
                 self.item.amount = half
                 cursor.item.amount -= half
@@ -249,11 +251,9 @@ class Inventory():
 
         def update(self, x, y, scale, cursor) -> None:
             button_box = pygame.Rect(
-                x, y, 10*scale, 10*scale)
-
+                x, y, 10 * scale, 10 * scale)
             if cursor.box.colliderect(button_box):
                 if cursor.pressed[0]:
-
                     self.parent.sort_item_name()
                     match self.name:
                         case "name":
@@ -261,7 +261,8 @@ class Inventory():
                         case "amount":
                             self.parent.sort_item_amount()
 
-            image = pygame.transform.scale(self.image, (10*scale, 10*scale))
+            image = pygame.transform.scale(
+                self.image, (10 * scale, 10 * scale))
             win.blit(image, (x, y))
 
     def __init__(self, name, rows, columns, x, y, scale=3, stack_limit=99) -> None:
@@ -327,21 +328,21 @@ class Inventory():
 
     def update(self, cursor) -> None:
         pygame.draw.rect(
-            win, (31, 31, 31), (self.position[0], self.position[1], self.columns*20*self.scale + 4*self.scale, self.rows*20*self.scale + 18*self.scale))
+            win, (31, 31, 31), (self.position[0], self.position[1], self.columns * 20 * self.scale + 4 * self.scale, self.rows * 20 * self.scale + 18 * self.scale))
 
         inventory_title = FONT.render(
             self.name, 1, (255, 255, 255))
         win.blit(inventory_title,
-                 (self.position[0] + 4*self.scale, self.position[1]+4*self.scale))
+                 (self.position[0] + 4 * self.scale, self.position[1] + 4 * self.scale))
 
         for i, b in enumerate(self.buttons):
-            b.update(self.position[0]+20*self.columns *
-                     self.scale - 9 * self.scale - i*12*self.scale, self.position[1] + 4*self.scale, self.scale, cursor)
+            b.update(self.position[0] + 20 * self.columns *
+                     self.scale - 9 * self.scale - i * 12 * self.scale, self.position[1] + 4 * self.scale, self.scale, cursor)
 
         for i, row in enumerate(self.cells):
             for j, cell in enumerate(row):
-                cell.update(self.position[0]+(j*20*self.scale) + 2*self.scale,
-                            self.position[1]+(i*20*self.scale) + 16*self.scale, self.scale, self.stack_limit, cursor)
+                cell.update(self.position[0] + (j * 20 * self.scale) + 2 * self.scale,
+                            self.position[1] + (i * 20 * self.scale) + 16 * self.scale, self.scale, self.stack_limit, cursor)
 
 
 def main():
