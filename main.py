@@ -72,6 +72,7 @@ CURSOR_ICONS = {
     "cursor": load_image("assets/gui/cursor.png"),
     "grab": load_image("assets/gui/cursor_grab.png"),
     "magnet": load_image("assets/gui/cursor_magnet.png"),
+    "move": load_image("assets/gui/cursor_move.png"),
 }
 INVENTORY_SORTING_BUTTONS = {
     "name": load_image("assets/gui/sort_name.jpg"),
@@ -102,6 +103,7 @@ class Cursor():
         self.cooldown = 0
         self.pressed = None
         self.magnet = False
+        self.move = False
 
     def update(self, keys) -> None:
         self.position = pygame.mouse.get_pos()
@@ -113,10 +115,14 @@ class Cursor():
         if self.cooldown > 0:
             self.cooldown -= 1
 
-        self.magnet = True if keys[K_LSHIFT] and self.item is not None else False
+        self.magnet = keys[K_LSHIFT] and self.item is not None
+        self.move = keys[K_LSHIFT] and not self.magnet
         if self.magnet:
             image = pygame.transform.scale(
                 CURSOR_ICONS["magnet"], (9 * 3, 10 * 3))
+        elif self.move:
+            image = pygame.transform.scale(
+                CURSOR_ICONS["move"], (9 * 3, 10 * 3))
         elif self.item is not None:
             image = pygame.transform.scale(
                 CURSOR_ICONS["grab"], (9 * 3, 10 * 3))
@@ -180,7 +186,7 @@ class Cell():
         self.item = item
         self.particles = []
 
-    def update(self, x, y, scale, stack_limit, cursor) -> None:
+    def update(self, x, y, scale, stack_limit, inventory_id, inventory_list, cursor) -> None:
         position = (x, y)
 
         cell_box = pygame.Rect(
@@ -220,7 +226,23 @@ class Cell():
                 cursor.set_cooldown()
 
             if cursor.item is None:
-                if cursor.pressed[0]:
+                if cursor.pressed[0] and cursor.move:
+                    index = inventory_id
+                    for i in range(len(inventory_list)):
+                        index = index + \
+                            1 if index < len(inventory_list) - 1 else 0
+                        if index == inventory_id:
+                            break
+                        if inventory_list[index].capacity != inventory_list[index].item_count:
+                            break
+                    print(index)
+                    temp = self.item.copy()
+                    self.item = None
+                    inventory_list[index].add_item(temp)
+                    self.particles.append(Dust())
+                    cursor.set_cooldown()
+
+                elif cursor.pressed[0]:
                     cursor.item = self.item
                     self.item = None
                     self.particles.append(Dust())
@@ -308,7 +330,9 @@ class Inventory():
         self.position = (x, y)
         self.scale = scale
         self.stack_limit = stack_limit
-        if self.rows * self.columns >= 6 and self.columns >= 3 and sorting_active:
+        self.capacity = rows * columns
+        self.item_count = 0
+        if self.capacity >= 6 and self.columns >= 3 and sorting_active:
             self.buttons = [
                 self.Inventory_Sorting_Button(x, self) for x in list(INVENTORY_SORTING_BUTTONS.keys()) if x != "select"
             ]
@@ -344,6 +368,14 @@ class Inventory():
                     item_list.append(cell.item.copy())
         return item_list
 
+    def get_item_count(self) -> int:
+        item_count = 0
+        for row in self.cells:
+            for cell in row:
+                if cell.item is not None:
+                    item_count += 1
+        return item_count
+
     def clear_inventory(self) -> None:
         for row in self.cells:
             for cell in row:
@@ -377,7 +409,8 @@ class Inventory():
             case "item":
                 return 2
 
-    def update(self, cursor) -> None:
+    def update(self, inventory_id, inventory_list, cursor) -> None:
+        self.item_count = self.get_item_count()
         pygame.draw.rect(
             win, (31, 31, 31), (*self.position, self.columns * 20 * self.scale + 4 * self.scale, self.rows * 20 * self.scale + 18 * self.scale))
 
@@ -393,15 +426,28 @@ class Inventory():
         for i, row in enumerate(self.cells):
             for j, cell in enumerate(row):
                 cell.update(self.position[0] + (j * 20 * self.scale) + 2 * self.scale,
-                            self.position[1] + (i * 20 * self.scale) + 16 * self.scale, self.scale, self.stack_limit, cursor)
+                            self.position[1] + (i * 20 * self.scale) + 16 * self.scale, self.scale, self.stack_limit, inventory_id, inventory_list, cursor)
+
+
+class Inventory_Engine():
+    def __init__(self, inventory_list) -> None:
+        self.inventory_list = inventory_list
+
+    def update(self, cursor) -> None:
+        for i, inventory in enumerate(self.inventory_list):
+            inventory.update(i, self.inventory_list, cursor)
 
 
 def main():
-    inventory = Inventory("Large", 6, 10, 50, 100, 3, 99)
-    inventory2 = Inventory("3x3", 3, 3, 700, 100, 3, 99)
-    inventory3 = Inventory("Small", 1, 3, 700, 400, 3, 99)
-    inventory4 = Inventory("Tall", 6, 3, 930, 100, 3, 99)
-    inventory5 = Inventory("Tall2", 6, 2, 1170, 100, 3, 99)
+    inventory_list = [
+        Inventory("Large", 6, 10, 50, 100, 3, 99),
+        Inventory("3x3", 3, 3, 700, 100, 3, 99),
+        Inventory("Small", 1, 3, 700, 400, 3, 99),
+        Inventory("Tall", 6, 3, 930, 100, 3, 99),
+        Inventory("Tall2", 6, 2, 1170, 100, 3, 99)
+    ]
+    inventory_engine = Inventory_Engine(inventory_list)
+
     cursor = Cursor()
     pygame.mouse.set_visible(False)
     run = True
@@ -415,15 +461,13 @@ def main():
         pygame.event.get()
         keys = pygame.key.get_pressed()
         if keys[K_c]:
-            inventory.add_item(Item(random.choice(list(ITEMS.keys())), 1))
+            inventory_engine.inventory_list[0].add_item(
+                Item(random.choice(list(ITEMS.keys())), 1))
         if keys[K_w]:
-            inventory.add_item(Weapon(random.choice(list(WEAPONS.keys())), 1))
+            inventory_engine.inventory_list[0].add_item(
+                Weapon(random.choice(list(WEAPONS.keys())), 1))
         win.fill((0, 0, 0))
-        inventory.update(cursor)
-        inventory2.update(cursor)
-        inventory3.update(cursor)
-        inventory4.update(cursor)
-        inventory5.update(cursor)
+        inventory_engine.update(cursor)
         cursor.update(keys)
 
         clock.tick(FPS)  # Pauses to keep track with FPS constant
