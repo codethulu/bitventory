@@ -67,9 +67,11 @@ WEAPONS = {
 }
 FONT = pygame.font.Font("assets/DTM-Sans.otf", 24)
 DUST = [load_image(f"assets/gui/dust_{x}.png") for x in range(5)]
-CURSOR = load_image("assets/gui/cursor.png")
+
 CURSOR_ICONS = {
-    "magnet": load_image("assets/gui/magnet_cursor_icon.png"),
+    "cursor": load_image("assets/gui/cursor.png"),
+    "grab": load_image("assets/gui/cursor_grab.png"),
+    "magnet": load_image("assets/gui/cursor_magnet.png"),
 }
 INVENTORY_SORTING_BUTTONS = {
     "name": load_image("assets/gui/sort_name.jpg"),
@@ -110,16 +112,18 @@ class Cursor():
         if self.cooldown > 0:
             self.cooldown -= 1
 
-        image = pygame.transform.scale(
-            CURSOR, (9 * 3, 10 * 3))
-        win.blit(image, (self.position[0], self.position[1]))
-
         self.magnet = True if keys[K_LSHIFT] and self.item is not None else False
         if self.magnet:
             image = pygame.transform.scale(
-                CURSOR_ICONS["magnet"], (6 * 3, 6 * 3))
-            win.blit(image, (self.position[0] -
-                     1 * 3, self.position[1] + 7 * 3))
+                CURSOR_ICONS["magnet"], (9 * 3, 10 * 3))
+        elif self.item is not None:
+            image = pygame.transform.scale(
+                CURSOR_ICONS["grab"], (9 * 3, 10 * 3))
+        else:
+            image = pygame.transform.scale(
+                CURSOR_ICONS["cursor"], (9 * 3, 10 * 3))
+
+        win.blit(image, (self.position[0], self.position[1]))
 
     def set_cooldown(self) -> None:
         self.cooldown = 10
@@ -249,11 +253,16 @@ class Cell():
                 cursor.item = None
                 self.particles.append(Dust())
                 cursor.set_cooldown()
-            elif cursor.pressed[2] and cursor.item.amount > 1 and cursor.item.stackable:
-                half = cursor.item.amount // 2
-                self.item = cursor.item.copy()
-                self.item.amount = half
-                cursor.item.amount -= half
+            elif cursor.pressed[2] and cursor.item.stackable:
+                if cursor.item.amount > 1:
+                    half = cursor.item.amount // 2
+                    self.item = cursor.item.copy()
+                    self.item.amount = half
+                    cursor.item.amount -= half
+                else:
+                    self.item = cursor.item
+                    cursor.item = None
+
                 self.particles.append(Dust())
                 cursor.set_cooldown()
 
