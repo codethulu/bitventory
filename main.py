@@ -77,6 +77,7 @@ INVENTORY_SORTING_BUTTONS = {
     "name": load_image("assets/gui/sort_name.jpg"),
     "amount": load_image("assets/gui/sort_amount.jpg"),
     "type": load_image("assets/gui/sort_type.jpg"),
+    "select": load_image("assets/gui/sort_select.png"),
 
 }
 
@@ -89,7 +90,7 @@ class Dust():
         self.life -= 1
         if self.life > 0:
             image = pygame.transform.scale(
-                DUST[4-(self.life // 3)], (16 * scale, 16 * scale))
+                DUST[4 - (self.life // 3)], (16 * scale, 16 * scale))
             win.blit(image, (x + 2 * scale, y + 2 * scale))
 
 
@@ -97,18 +98,18 @@ class Cursor():
     def __init__(self) -> None:
         self.item = None
         self.position = pygame.mouse.get_pos()
-        self.box = pygame.Rect(self.position[0], self.position[1], 1, 1)
+        self.box = pygame.Rect(*self.position, 1, 1)
         self.cooldown = 0
         self.pressed = None
         self.magnet = False
 
     def update(self, keys) -> None:
         self.position = pygame.mouse.get_pos()
-        self.box = pygame.Rect(self.position[0], self.position[1], 1, 1)
+        self.box = pygame.Rect(*self.position, 1, 1)
         self.pressed = pygame.mouse.get_pressed()
 
         if self.item is not None:
-            self.item.draw(self.position[0], self.position[1], 3)
+            self.item.draw(*self.position, 3)
         if self.cooldown > 0:
             self.cooldown -= 1
 
@@ -138,15 +139,19 @@ class Item():
 
     def draw(self, x, y, scale) -> None:
         image = pygame.transform.scale(
-            ITEM_TEXTURES[self.name], (16*scale, 16*scale))
+            ITEM_TEXTURES[self.name], (16 * scale, 16 * scale))
         if self.amount > 1:
             image2 = pygame.transform.rotate(image, 10)
             win.blit(image2, (x + 3 *
                               scale, y))
-        if self.amount > 50:
+        if self.amount > 24:
             image2 = pygame.transform.rotate(image, -20)
             win.blit(image2, (x + 1 *
                               scale, y))
+        if self.amount > 50:
+            image2 = pygame.transform.rotate(image, 30)
+            win.blit(image2, (x - 2 *
+                              scale, y - 1 * scale))
 
         win.blit(image, (x + 2 * scale, y + 2 * scale))
 
@@ -179,7 +184,7 @@ class Cell():
         position = (x, y)
 
         cell_box = pygame.Rect(
-            position[0], position[1], 20 * scale, 20 * scale)
+            *position, 20 * scale, 20 * scale)
 
         if cursor.box.colliderect(cell_box):
             image = pygame.transform.scale(
@@ -196,7 +201,7 @@ class Cell():
                     self.particles.remove(p)
 
         if self.item is not None:
-            self.item.draw(position[0], position[1], scale)
+            self.item.draw(*position, scale)
             if not cursor.box.colliderect(cell_box):
                 return
             if cursor.cooldown != 0:
@@ -221,7 +226,7 @@ class Cell():
                     self.particles.append(Dust())
                     cursor.set_cooldown()
                 elif cursor.pressed[2] and self.item.amount > 1:
-                    half = self.item.amount//2
+                    half = self.item.amount // 2
                     cursor.item = self.item.copy()
                     cursor.item.amount = half
                     self.item.amount -= half
@@ -275,9 +280,16 @@ class Inventory():
             self.parent = inv
 
         def update(self, x, y, scale, cursor) -> None:
+            image = pygame.transform.scale(
+                self.image, (10 * scale, 10 * scale))
+            win.blit(image, (x, y))
+
             button_box = pygame.Rect(
                 x, y, 10 * scale, 10 * scale)
             if cursor.box.colliderect(button_box):
+                image = pygame.transform.scale(
+                    INVENTORY_SORTING_BUTTONS["select"], (10 * scale, 10 * scale))
+                win.blit(image, (x, y))
                 if cursor.pressed[0]:
                     self.parent.sort_item_name()
                     match self.name:
@@ -287,10 +299,6 @@ class Inventory():
                             self.parent.sort_item_amount()
                         case "type":
                             self.parent.sort_item_type()
-
-            image = pygame.transform.scale(
-                self.image, (10 * scale, 10 * scale))
-            win.blit(image, (x, y))
 
     def __init__(self, name, rows, columns, x, y, scale=3, stack_limit=99, sorting_active=True) -> None:
         self.name = name
@@ -302,7 +310,7 @@ class Inventory():
         self.stack_limit = stack_limit
         if self.rows * self.columns >= 6 and self.columns >= 3 and sorting_active:
             self.buttons = [
-                self.Inventory_Sorting_Button(x, self) for x in list(INVENTORY_SORTING_BUTTONS.keys())
+                self.Inventory_Sorting_Button(x, self) for x in list(INVENTORY_SORTING_BUTTONS.keys()) if x != "select"
             ]
         else:
             self.buttons = []
@@ -371,7 +379,7 @@ class Inventory():
 
     def update(self, cursor) -> None:
         pygame.draw.rect(
-            win, (31, 31, 31), (self.position[0], self.position[1], self.columns * 20 * self.scale + 4 * self.scale, self.rows * 20 * self.scale + 18 * self.scale))
+            win, (31, 31, 31), (*self.position, self.columns * 20 * self.scale + 4 * self.scale, self.rows * 20 * self.scale + 18 * self.scale))
 
         inventory_title = FONT.render(
             self.name, 1, (255, 255, 255))
