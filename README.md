@@ -24,6 +24,8 @@ SCALE - The size of the inventory window (3 default)
 
 STACK_LIMIT - The maximum size items in the inventory can stack to (99 default)
 
+SORTING_ACTIVE - Displays buttons to sort items (Buttons are only available on larger inventory windows) (True default)
+
 ``inventory = Inventory(NAME, ROWS, COLUMNS, X, Y, SCALE, STACK_LIMIT)``
 
 ## Example
@@ -41,6 +43,8 @@ The ``main()`` method provided initialises an example playground. Two inventory 
 ⏳ Sort by name and stack size using the buttons!
 
 🧲 Holding [SHIFT] while an item is picked up will allow you to automatically pick similar items up on hover!
+
+🐭 Custom cursor with useful context icons
 
 🖖 You can split item stacks using [RIGHT CLICK]
 
