@@ -21,6 +21,8 @@ def load_image(image_name):
 
 CELL = load_image("assets/gui/tile.jpg")
 CELL_SELECTED = load_image("assets/gui/tile_selected.jpg")
+BIN_CELL = load_image("assets/gui/tile_bin.jpg")
+BIN_CELL_SELECTED = load_image("assets/gui/tile_bin_selected.jpg")
 ITEM_TEXTURES = {
     "grass": load_image("assets/items/grass.png"),
     "string": load_image("assets/items/string.png"),
@@ -186,6 +188,15 @@ class Cell():
         self.item = item
         self.particles = []
 
+    def draw(self, scale, selected):
+        match selected:
+            case 1:
+                image = pygame.transform.scale(
+                    CELL_SELECTED, (20 * scale, 20 * scale))
+            case 0:
+                image = pygame.transform.scale(CELL, (20 * scale, 20 * scale))
+        return image
+
     def update(self, x, y, scale, stack_limit, inventory_id, inventory_list, cursor) -> None:
         position = (x, y)
 
@@ -193,10 +204,9 @@ class Cell():
             *position, 20 * scale, 20 * scale)
 
         if cursor.box.colliderect(cell_box):
-            image = pygame.transform.scale(
-                CELL_SELECTED, (20 * scale, 20 * scale))
+            image = self.draw(scale, 1)
         else:
-            image = pygame.transform.scale(CELL, (20 * scale, 20 * scale))
+            image = self.draw(scale, 0)
 
         win.blit(image, position)
 
@@ -235,7 +245,6 @@ class Cell():
                             break
                         if inventory_list[index].capacity != inventory_list[index].item_count:
                             break
-                    print(index)
                     temp = self.item.copy()
                     self.item = None
                     inventory_list[index].add_item(temp)
@@ -294,6 +303,21 @@ class Cell():
                 cursor.set_cooldown()
 
 
+class Bin(Cell):
+    def __init__(self, item=None) -> None:
+        super().__init__(item)
+
+    def draw(self, scale, selected):
+        match selected:
+            case 1:
+                image = pygame.transform.scale(
+                    BIN_CELL_SELECTED, (20 * scale, 20 * scale))
+            case 0:
+                image = pygame.transform.scale(
+                    BIN_CELL, (20 * scale, 20 * scale))
+        return image
+
+
 class Inventory():
     class Inventory_Sorting_Button():
         def __init__(self, name, inv) -> None:
@@ -322,7 +346,7 @@ class Inventory():
                         case "type":
                             self.parent.sort_item_type()
 
-    def __init__(self, name, rows, columns, x, y, scale=3, stack_limit=99, sorting_active=True) -> None:
+    def __init__(self, name, rows, columns, x, y, scale=3, stack_limit=99, sorting_active=True, bin_active=False) -> None:
         self.name = name
         self.rows = rows
         self.columns = columns
@@ -332,6 +356,7 @@ class Inventory():
         self.stack_limit = stack_limit
         self.capacity = rows * columns
         self.item_count = 0
+        self.bin = bin_active
         if self.capacity >= 6 and self.columns >= 3 and sorting_active:
             self.buttons = [
                 self.Inventory_Sorting_Button(x, self) for x in list(INVENTORY_SORTING_BUTTONS.keys()) if x != "select"
@@ -412,7 +437,7 @@ class Inventory():
     def update(self, inventory_id, inventory_list, cursor) -> None:
         self.item_count = self.get_item_count()
         pygame.draw.rect(
-            win, (31, 31, 31), (*self.position, self.columns * 20 * self.scale + 4 * self.scale, self.rows * 20 * self.scale + 18 * self.scale))
+            win, (31, 31, 31), (*self.position, self.columns * 20 * self.scale + 4 * self.scale, self.rows * 20 * self.scale + 18 * self.scale + (20 * self.scale if self.bin else 0)))
 
         inventory_title = FONT.render(
             self.name, 1, (255, 255, 255))
@@ -427,6 +452,10 @@ class Inventory():
             for j, cell in enumerate(row):
                 cell.update(self.position[0] + (j * 20 * self.scale) + 2 * self.scale,
                             self.position[1] + (i * 20 * self.scale) + 16 * self.scale, self.scale, self.stack_limit, inventory_id, inventory_list, cursor)
+        bin_cell = Bin()
+        if self.bin:
+            bin_cell.update(self.position[0] + ((len(self.cells[0]) - 1) * 20 * self.scale) + 2 * self.scale,
+                            self.position[1] + (len(self.cells) * 20 * self.scale) + 16 * self.scale, self.scale, self.stack_limit, inventory_id, inventory_list, cursor)
 
 
 class Inventory_Engine():
@@ -440,7 +469,7 @@ class Inventory_Engine():
 
 def main():
     inventory_list = [
-        Inventory("Large", 6, 10, 50, 100, 3, 99),
+        Inventory("Large", 6, 10, 50, 100, 3, 99, bin_active=True),
         Inventory("3x3", 3, 3, 700, 100, 3, 99),
         Inventory("Small", 1, 3, 700, 400, 3, 99),
         Inventory("Tall", 6, 3, 930, 100, 3, 99),
