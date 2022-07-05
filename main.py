@@ -67,6 +67,7 @@ WEAPONS = {
 }
 FONT = pygame.font.Font("assets/DTM-Sans.otf", 24)
 DUST = [load_image(f"assets/gui/dust_{x}.png") for x in range(5)]
+CURSOR = load_image("assets/gui/cursor.png")
 CURSOR_ICONS = {
     "magnet": load_image("assets/gui/magnet_cursor_icon.png"),
 }
@@ -109,12 +110,16 @@ class Cursor():
         if self.cooldown > 0:
             self.cooldown -= 1
 
+        image = pygame.transform.scale(
+            CURSOR, (9 * 3, 10 * 3))
+        win.blit(image, (self.position[0], self.position[1]))
+
         self.magnet = True if keys[K_LSHIFT] and self.item is not None else False
         if self.magnet:
             image = pygame.transform.scale(
                 CURSOR_ICONS["magnet"], (6 * 3, 6 * 3))
-            win.blit(image, (self.position[0] +
-                     2 * 3, self.position[1] + 12 * 3))
+            win.blit(image, (self.position[0] -
+                     1 * 3, self.position[1] + 7 * 3))
 
     def set_cooldown(self) -> None:
         self.cooldown = 10
@@ -381,6 +386,7 @@ def main():
     inventory4 = Inventory("Tall", 6, 3, 930, 100, 3, 99)
     inventory5 = Inventory("Tall2", 6, 2, 1170, 100, 3, 99)
     cursor = Cursor()
+    pygame.mouse.set_visible(False)
     run = True
     while run:
         for event in pygame.event.get():  # Test to see if the usr quits the game, if so, quit
