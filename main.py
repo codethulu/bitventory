@@ -478,9 +478,10 @@ def main():
     inventory_engine = Inventory_Engine(inventory_list)
 
     cursor = Cursor()
-    pygame.mouse.set_visible(False)
+
     run = True
     while run:
+        pygame.mouse.set_visible(False)
         for event in pygame.event.get():  # Test to see if the usr quits the game, if so, quit
             if event.type == pygame.QUIT:
                 print("Program closed by user.")
