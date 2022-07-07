@@ -68,7 +68,7 @@ WEAPONS = {
 
 }
 FONT = pygame.font.Font("assets/DTM-Sans.otf", 24)
-DUST = [load_image(f"assets/gui/dust_{x}.png") for x in range(5)]
+DUST = [load_image(f"assets/gui/dust_{x}.png") for x in range(6)]
 
 CURSOR_ICONS = {
     "cursor": load_image("assets/gui/cursor.png"),
@@ -87,13 +87,13 @@ INVENTORY_SORTING_BUTTONS = {
 
 class Dust():
     def __init__(self) -> None:
-        self.life = 12
+        self.life = 20
 
     def update(self, x, y, scale) -> None:
         self.life -= 1
         if self.life > 0:
             image = pygame.transform.scale(
-                DUST[4 - (self.life // 3)], (16 * scale, 16 * scale))
+                DUST[5 - (self.life // 4)], (16 * scale, 16 * scale))
             win.blit(image, (x + 2 * scale, y + 2 * scale))
 
 
