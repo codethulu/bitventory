@@ -122,6 +122,11 @@ class Dust():
             win.blit(image, (x + 2 * scale, y + 2 * scale))
 
 
+class Cursor_Context_Box():
+    def __init__(self, name, description) -> None:
+        pass
+
+
 class Cursor():
     def __init__(self) -> None:
         self.item = None
