@@ -42,6 +42,19 @@ ITEM_TEXTURES = {
     "bow": load_image("assets/items/bow.png"),
     "gold_bow": load_image("assets/items/gold_bow.png"),
     "scythe": load_image("assets/items/scythe.png"),
+    "poison": load_image("assets/items/poison.png"),
+    "poison_arrow": load_image("assets/items/poison_arrow.png"),
+    "health_potion": load_image("assets/items/health_potion.png"),
+    "bronze_bar": load_image("assets/items/bronze_bar.png"),
+    "bronze_sword": load_image("assets/items/bronze_sword.png"),
+    "glass": load_image("assets/items/glass.png"),
+    "glass_bottle": load_image("assets/items/glass_bottle.png"),
+    "paper": load_image("assets/items/paper.png"),
+    "rose": load_image("assets/items/rose.png"),
+    "daisy": load_image("assets/items/daisy.png"),
+    "amethyst_arrow": load_image("assets/items/amethyst_arrow.png"),
+    "feather": load_image("assets/items/feather.png"),
+    "bone_arrow": load_image("assets/items/bone_arrow.png"),
 }
 ITEMS = {
     "grass": load_image("assets/items/grass.png"),
@@ -57,7 +70,18 @@ ITEMS = {
     "flint": load_image("assets/items/flint.png"),
     "arrow": load_image("assets/items/arrow.png"),
     "book": load_image("assets/items/book.png"),
-
+    "poison": load_image("assets/items/poison.png"),
+    "poison_arrow": load_image("assets/items/poison_arrow.png"),
+    "health_potion": load_image("assets/items/health_potion.png"),
+    "bronze_bar": load_image("assets/items/bronze_bar.png"),
+    "glass": load_image("assets/items/glass.png"),
+    "glass_bottle": load_image("assets/items/glass_bottle.png"),
+    "paper": load_image("assets/items/paper.png"),
+    "rose": load_image("assets/items/rose.png"),
+    "daisy": load_image("assets/items/daisy.png"),
+    "amethyst_arrow": load_image("assets/items/amethyst_arrow.png"),
+    "feather": load_image("assets/items/feather.png"),
+    "bone_arrow": load_image("assets/items/bone_arrow.png"),
 }
 WEAPONS = {
     "gold_sword": load_image("assets/items/gold_sword.png"),
@@ -65,6 +89,7 @@ WEAPONS = {
     "bow": load_image("assets/items/bow.png"),
     "gold_bow": load_image("assets/items/gold_bow.png"),
     "scythe": load_image("assets/items/scythe.png"),
+    "bronze_sword": load_image("assets/items/bronze_sword.png"),
 
 }
 FONT = pygame.font.Font("assets/DTM-Sans.otf", 24)
