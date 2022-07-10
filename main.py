@@ -155,10 +155,10 @@ class Cursor_Context_Box():
             footer = True
             desc.append(self.description[:30])
             self.description = self.description[30:]
-            height += 0.26
+            height += 0.26 * 20 * scale
 
         if footer:
-            height += 0.2
+            height += 0.2 * 20 * scale
 
         pygame.draw.rect(
             win, (255, 255, 255), (x+12 + offset["x"], y+12 + offset["y"], width, height))
