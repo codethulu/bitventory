@@ -1,4 +1,5 @@
 # program to create item inventory
+from signal import default_int_handler
 import pygame
 import os
 from pygame.locals import *
@@ -57,42 +58,45 @@ ITEM_TEXTURES = {
     "bone_arrow": load_image("assets/items/bone_arrow.png"),
 }
 ITEMS = {
-    "grass": load_image("assets/items/grass.png"),
-    "string": load_image("assets/items/string.png"),
-    "silver_arrow": load_image("assets/items/silver_arrow.png"),
-    "amethyst_clump": load_image("assets/items/amethyst_clump.png"),
-    "iron_bar": load_image("assets/items/iron_bar.png"),
-    "silver_bar": load_image("assets/items/silver_bar.png"),
-    "gold_bar": load_image("assets/items/gold_bar.png"),
-    "stick": load_image("assets/items/stick.png"),
-    "diamond_clump": load_image("assets/items/diamond_clump.png"),
-    "bone": load_image("assets/items/bone.png"),
-    "flint": load_image("assets/items/flint.png"),
-    "arrow": load_image("assets/items/arrow.png"),
-    "book": load_image("assets/items/book.png"),
-    "poison": load_image("assets/items/poison.png"),
-    "poison_arrow": load_image("assets/items/poison_arrow.png"),
-    "health_potion": load_image("assets/items/health_potion.png"),
-    "bronze_bar": load_image("assets/items/bronze_bar.png"),
-    "glass": load_image("assets/items/glass.png"),
-    "glass_bottle": load_image("assets/items/glass_bottle.png"),
-    "paper": load_image("assets/items/paper.png"),
-    "rose": load_image("assets/items/rose.png"),
-    "daisy": load_image("assets/items/daisy.png"),
-    "amethyst_arrow": load_image("assets/items/amethyst_arrow.png"),
-    "feather": load_image("assets/items/feather.png"),
-    "bone_arrow": load_image("assets/items/bone_arrow.png"),
+    "grass": {"name": "Grass", "description": "It's some grass."},
+    "string": {"name": "String", "description": ""},
+    "silver_arrow": {"name": "Silver Arrow", "description": "A stronger arrow made from silver. Suitable for hunting the supernatural."},
+    "amethyst_clump": {"name": "Amethyst Clump", "description": ""},
+    "iron_bar": {"name": "Iron Bar", "description": ""},
+    "silver_bar": {"name": "Silver Bar", "description": ""},
+    "gold_bar": {"name": "Gold Bar", "description": ""},
+    "stick": {"name": "Stick", "description": ""},
+    "diamond_clump": {"name": "Diamond Clump", "description": ""},
+    "bone": {"name": "Bone", "description": ""},
+    "flint": {"name": "Flint", "description": ""},
+    "arrow": {"name": "Arrow", "description": ""},
+    "book": {"name": "Book", "description": ""},
+    "poison": {"name": "Poison", "description": ""},
+    "poison_arrow": {"name": "Poison Arrow", "description": ""},
+    "health_potion": {"name": "Health Potion", "description": ""},
+    "bronze_bar": {"name": "Bronze Bar", "description": ""},
+    "glass": {"name": "Glass", "description": ""},
+    "glass_bottle": {"name": "Glass Bottle", "description": ""},
+    "paper": {"name": "Paper", "description": ""},
+    "rose": {"name": "Rose", "description": ""},
+    "daisy": {"name": "Daisy", "description": ""},
+    "amethyst_arrow": {"name": "Amethyst Arrow", "description": ""},
+    "feather": {"name": "Feather", "description": ""},
+    "bone_arrow": {"name": "Bone Arrow", "description": ""},
 }
 WEAPONS = {
-    "gold_sword": load_image("assets/items/gold_sword.png"),
-    "iron_sword": load_image("assets/items/iron_sword.png"),
-    "bow": load_image("assets/items/bow.png"),
-    "gold_bow": load_image("assets/items/gold_bow.png"),
-    "scythe": load_image("assets/items/scythe.png"),
-    "bronze_sword": load_image("assets/items/bronze_sword.png"),
+    "gold_sword": {"name": "Gold Sword", "description": ""},
+    "iron_sword": {"name": "Iron Sword", "description": ""},
+    "bow": {"name": "Bone Arrow", "description": ""},
+    "gold_bow": {"name": "Gold Bow", "description": ""},
+    "scythe": {"name": "Scythe", "description": "Used for farming and combat!"},
+    "bronze_sword": {"name": "Bronze Sword", "description": ""},
 
 }
-FONT = pygame.font.Font("assets/DTM-Sans.otf", 24)
+FONT = {
+    "16": pygame.font.Font("assets/DTM-Sans.otf", 16),
+    "24": pygame.font.Font("assets/DTM-Sans.otf", 24)
+}
 DUST = [load_image(f"assets/gui/dust_{x}.png") for x in range(6)]
 
 CURSOR_ICONS = {
@@ -123,8 +127,46 @@ class Dust():
 
 
 class Cursor_Context_Box():
-    def __init__(self, name, description) -> None:
-        pass
+    def __init__(self, name, description, flip) -> None:
+        self.name = name
+        self.description = description
+        self.flip = flip
+
+    def update(self, x, y, scale) -> None:
+        # image = pygame.transform.scale(
+        #     DUST[0], (16 * scale, 16 * scale))
+        # win.blit(image, (x + 2 * scale, y + 2 * scale))
+        # height = (1.5 if self.description != "" else 0.55)
+        footer = False
+
+        height = 0.55
+
+        desc = []
+
+        while self.description != "":
+            footer = True
+            desc.append(self.description[:30])
+            self.description = self.description[30:]
+            height += 0.26
+
+        if footer:
+            height += 0.2
+
+        pygame.draw.rect(
+            win, (255, 255, 255), (x+12, y+12, 4 * 20 * scale, height * 20 * scale))
+        pygame.draw.rect(
+            win, (31, 31, 31), (x+15, y+15, 4 * 20 * scale - 6, height * 20 * scale - 6))
+
+        inventory_title = FONT["24"].render(
+            self.name, 1, (255, 255, 255))
+        win.blit(inventory_title,
+                 (x + 7 * 3, y + 4 * 3))
+
+        line = 0
+        for d in desc:
+            description = FONT["16"].render(d, 1, (180, 180, 180))
+            win.blit(description, (x + 7 * 3, y + 1.5 * 20 + 4 * 3 + line * 5))
+            line += 3
 
 
 class Cursor():
@@ -136,6 +178,7 @@ class Cursor():
         self.pressed = None
         self.magnet = False
         self.move = False
+        self.context = None
 
     def update(self, keys) -> None:
         self.position = pygame.mouse.get_pos()
@@ -149,6 +192,11 @@ class Cursor():
 
         self.magnet = keys[K_LSHIFT] and self.item is not None
         self.move = keys[K_LSHIFT] and not self.magnet
+
+        if self.context is not None:
+            self.context.update(*self.position, 3)
+            self.context = None
+
         if self.magnet:
             image = pygame.transform.scale(
                 CURSOR_ICONS["magnet"], (9 * 3, 10 * 3))
@@ -194,12 +242,18 @@ class Item():
         win.blit(image, (x + 2 * scale, y + 2 * scale))
 
         if self.amount > 1:
-            item_count = FONT.render(
+            item_count = FONT["24"].render(
                 str(self.amount), 1, (255, 255, 255))
             win.blit(item_count, (x + 12 * scale, y + 10 * scale))
 
     def copy(self):
         return Item(self.name, self.amount)
+
+    def get_name(self):
+        return ITEMS[self.name]["name"]
+
+    def get_description(self):
+        return ITEMS[self.name]["description"]
 
 
 class Weapon(Item):
@@ -210,6 +264,12 @@ class Weapon(Item):
 
     def copy(self):
         return Weapon(self.name, self.amount)
+
+    def get_name(self):
+        return WEAPONS[self.name]["name"]
+
+    def get_description(self):
+        return WEAPONS[self.name]["description"]
 
 
 class Cell():
@@ -266,6 +326,8 @@ class Cell():
                 cursor.set_cooldown()
 
             if cursor.item is None:
+                cursor.context = Cursor_Context_Box(
+                    self.item.get_name(), self.item.get_description(), 0 if True else 1)
                 if cursor.pressed[0] and cursor.move:
                     index = inventory_id
                     for i in range(len(inventory_list)):
@@ -469,7 +531,7 @@ class Inventory():
         pygame.draw.rect(
             win, (31, 31, 31), (*self.position, self.columns * 20 * self.scale + 4 * self.scale, self.rows * 20 * self.scale + 18 * self.scale + (20 * self.scale if self.bin else 0)))
 
-        inventory_title = FONT.render(
+        inventory_title = FONT["24"].render(
             self.name, 1, (255, 255, 255))
         win.blit(inventory_title,
                  (self.position[0] + 4 * self.scale, self.position[1] + 4 * self.scale))
