@@ -141,11 +141,13 @@ class Cursor_Context_Box():
 
         height = 0.55 * 20 * scale
         width = 4 * 20 * scale
+        offset = {"x": 0, "y": 0}
 
         if x > SCREENWIDTH - width:
-            offset = -width
-        else:
-            offset = 0
+            offset["x"] = -width
+
+        if y > SCREENHEIGHT - height:
+            offset["y"] = -height
 
         desc = []
 
@@ -159,20 +161,20 @@ class Cursor_Context_Box():
             height += 0.2
 
         pygame.draw.rect(
-            win, (255, 255, 255), (x+12 + offset, y+12, width, height))
+            win, (255, 255, 255), (x+12 + offset["x"], y+12 + offset["y"], width, height))
         pygame.draw.rect(
-            win, (31, 31, 31), (x+15 + offset, y+15, width - 6, height - 6))
+            win, (31, 31, 31), (x+15 + offset["x"], y+15 + offset["y"], width - 6, height - 6))
 
         inventory_title = FONT["24"].render(
             self.name, 1, (255, 255, 255))
         win.blit(inventory_title,
-                 (x + 7 * 3 + offset, y + 4 * 3))
+                 (x + 7 * 3 + offset["x"], y + 4 * 3 + offset["y"]))
 
         line = 0
         for d in desc:
             description = FONT["16"].render(d, 1, (180, 180, 180))
-            win.blit(description, (x + 7 * 3 + offset,
-                     y + 1.5 * 20 + 4 * 3 + line * 5))
+            win.blit(description, (x + 7 * 3 + offset["x"],
+                     y + 1.5 * 20 + 4 * 3 + line * 5 + offset["y"]))
             line += 3
 
 
