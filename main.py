@@ -1,4 +1,5 @@
 # program to create item inventory
+from operator import length_hint
 from signal import default_int_handler
 import pygame
 import os
@@ -149,13 +150,22 @@ class Cursor_Context_Box():
         if y > SCREENHEIGHT - height:
             offset["y"] = -height
 
-        desc = []
+        desc = [""]
+        line = 0
 
-        while self.description != "":
-            footer = True
-            desc.append(self.description[:30])
-            self.description = self.description[30:]
+        words = self.description.split(' ')
+        if len(words) > 1:
             height += 0.26 * 20 * scale
+            footer = True
+
+        for i, word in enumerate(words):
+            if not len(word) + len(desc[line]) > 30:
+                desc[line] += (" " if i != 0 else "") + word
+            else:
+                desc.append("")
+                line += 1
+                desc[line] += word
+                height += 0.26 * 20 * scale
 
         if footer:
             height += 0.2 * 20 * scale
