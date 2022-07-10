@@ -134,10 +134,6 @@ class Cursor_Context_Box():
         self.flip = flip
 
     def update(self, x, y, scale) -> None:
-        # image = pygame.transform.scale(
-        #     DUST[0], (16 * scale, 16 * scale))
-        # win.blit(image, (x + 2 * scale, y + 2 * scale))
-        # height = (1.5 if self.description != "" else 0.55)
         footer = False
 
         height = 0.55 * 20 * scale
