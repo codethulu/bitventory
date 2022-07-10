@@ -139,7 +139,8 @@ class Cursor_Context_Box():
         # height = (1.5 if self.description != "" else 0.55)
         footer = False
 
-        height = 0.55
+        height = 0.55 * 20 * scale
+        width = 4 * 20 * scale
 
         desc = []
 
@@ -153,9 +154,9 @@ class Cursor_Context_Box():
             height += 0.2
 
         pygame.draw.rect(
-            win, (255, 255, 255), (x+12, y+12, 4 * 20 * scale, height * 20 * scale))
+            win, (255, 255, 255), (x+12, y+12, width, height))
         pygame.draw.rect(
-            win, (31, 31, 31), (x+15, y+15, 4 * 20 * scale - 6, height * 20 * scale - 6))
+            win, (31, 31, 31), (x+15, y+15, width - 6, height - 6))
 
         inventory_title = FONT["24"].render(
             self.name, 1, (255, 255, 255))
