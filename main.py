@@ -105,6 +105,7 @@ CURSOR_ICONS = {
     "grab": load_image("assets/gui/cursor_grab.png"),
     "magnet": load_image("assets/gui/cursor_magnet.png"),
     "move": load_image("assets/gui/cursor_move.png"),
+    "text": load_image("assets/gui/cursor_text.png"),           # Added cursor text icon
 }
 INVENTORY_SORTING_BUTTONS = {
     "name": load_image("assets/gui/sort_name.jpg"),
@@ -112,6 +113,20 @@ INVENTORY_SORTING_BUTTONS = {
     "type": load_image("assets/gui/sort_type.jpg"),
     "select": load_image("assets/gui/sort_select.png"),
 
+}
+
+# Search Bar assets (Made temporarily for visual purposes)
+
+SEARCH_BAR = {
+    "left": load_image("assets/gui/search_left.png"),
+    "middle": load_image("assets/gui/search_middle.png"),
+    "right": load_image("assets/gui/search_right.png"),
+}
+
+SEARCH_BAR_SELECTED = {
+    "left": load_image("assets/gui/search_sel_left.png"),
+    "middle": load_image("assets/gui/search_sel_middle.png"),
+    "right": load_image("assets/gui/search_sel_right.png"),
 }
 
 
@@ -193,9 +208,10 @@ class Cursor():
         self.pressed = None
         self.magnet = False
         self.move = False
+        self.text = False
         self.context = None
 
-    def update(self, keys) -> None:
+    def update(self, keys, search_bar_pos, search_bar_scale) -> None:
         self.position = pygame.mouse.get_pos()
         self.box = pygame.Rect(*self.position, 1, 1)
         self.pressed = pygame.mouse.get_pressed()
@@ -205,6 +221,8 @@ class Cursor():
         if self.cooldown > 0:
             self.cooldown -= 1
 
+        search_box = pygame.Rect(search_bar_pos[0], search_bar_pos[1] + 16 * search_bar_scale, 21 * 20 * search_bar_scale, 20 * search_bar_scale)
+        self.text = self.box.colliderect(search_box)                # Colliding with search box changes cursor to text
         self.magnet = keys[K_LSHIFT] and self.item is not None
         self.move = keys[K_LSHIFT] and not self.magnet
 
@@ -221,6 +239,9 @@ class Cursor():
         elif self.item is not None:
             image = pygame.transform.scale(
                 CURSOR_ICONS["grab"], (9 * 3, 10 * 3))
+        elif self.text:
+            image = pygame.transform.scale(
+                CURSOR_ICONS["text"], (9 * 3, 10 * 3))          # Added cursor text icon
         else:
             image = pygame.transform.scale(
                 CURSOR_ICONS["cursor"], (9 * 3, 10 * 3))
@@ -541,7 +562,7 @@ class Inventory():
             case "item":
                 return 2
 
-    def update(self, inventory_id, inventory_list, cursor) -> None:
+    def update(self, inventory_id, inventory_list, cursor, text) -> None:
         self.item_count = self.get_item_count()
         pygame.draw.rect(
             win, (31, 31, 31), (*self.position, self.columns * 20 * self.scale + 4 * self.scale, self.rows * 20 * self.scale + 18 * self.scale + (20 * self.scale if self.bin else 0)))
@@ -564,15 +585,111 @@ class Inventory():
             bin_cell.update(self.position[0] + ((len(self.cells[0]) - 1) * 20 * self.scale) + 2 * self.scale,
                             self.position[1] + (len(self.cells) * 20 * self.scale) + 16 * self.scale, self.scale, self.stack_limit, inventory_id, inventory_list, cursor)
 
+        # search shading and highlighting red (graphics not fully implemented but just the POC here)
+        if text != "":
+            for i, row in enumerate(self.cells):
+                for j, cell in enumerate(row):
+                    if cell.item is not None and text in cell.item.name:
+                        pygame.draw.rect(
+                            win, (255, 0, 0), (self.position[0] + (j * 20 * self.scale) + 2 * self.scale,
+                                               self.position[1] + (i * 20 * self.scale) + 16 * self.scale, 4 * self.scale, 4 * self.scale))
+                    else:
+                        shade = pygame.Surface((16 * self.scale, 16 * self.scale))
+                        shade.set_alpha(128)
+                        shade.fill((0, 0, 0))
+                        win.blit(shade,
+                                 (self.position[0] + (j * 20 * self.scale) + 2 * self.scale + 2 * self.scale, self.position[1] + (i * 20 * self.scale) + 16 * self.scale + 2 * self.scale))
+
 
 class Inventory_Engine():
     def __init__(self, inventory_list) -> None:
         self.inventory_list = inventory_list
 
-    def update(self, cursor) -> None:
+    def update(self, cursor, text) -> None:
         for i, inventory in enumerate(self.inventory_list):
-            inventory.update(i, self.inventory_list, cursor)
+            inventory.update(i, self.inventory_list, cursor, text)
 
+# Search bar class *Xini
+
+class Search_Bar():
+    def __init__(self, width, x, y, scale=3) -> None:
+        self.width = width
+        self.position = (x, y)
+        self.scale = scale
+        self.clicked = 0
+        self.blink = 0
+        self.text_pos = 0
+        self.text = ""
+    
+    def draw(self, selected):
+        images = [pygame.Surface] * self.width
+        match selected:
+            case 1:
+                for i in range(self.width):
+                    if i == 0:
+                        images[i] = pygame.transform.scale(SEARCH_BAR_SELECTED["left"], (20 * self.scale, 20 * self.scale))
+                    elif i == self.width - 1:
+                        images[i] = pygame.transform.scale(SEARCH_BAR_SELECTED["right"], (20 * self.scale, 20 * self.scale))
+                    else:
+                        images[i] = pygame.transform.scale(SEARCH_BAR_SELECTED["middle"], (20 * self.scale, 20 * self.scale))
+            case 0:
+                for i in range(self.width):
+                    if i == 0:
+                        images[i] = pygame.transform.scale(SEARCH_BAR["left"], (20 * self.scale, 20 * self.scale))
+                    elif i == self.width - 1:
+                        images[i] = pygame.transform.scale(SEARCH_BAR["right"], (20 * self.scale, 20 * self.scale))
+                    else:
+                        images[i] = pygame.transform.scale(SEARCH_BAR["middle"], (20 * self.scale, 20 * self.scale))
+        return images
+    
+    def update(self, cursor) -> None:
+        pygame.draw.rect(
+            win, (31, 31, 31), (*self.position, self.width * 20 * self.scale + 4 * self.scale, 20 * self.scale + 18 * self.scale))
+
+        search_bar_title = FONT["24"].render(
+            "Search:", 1, (255, 255, 255))
+        win.blit(search_bar_title, (self.position[0] + 4 * self.scale, self.position[1] + 4 * self.scale))
+
+        search_box = pygame.Rect(
+            self.position[0], self.position[1] + 16 * self.scale, self.width * 20 * self.scale, 20 * self.scale)
+
+        if cursor.box.colliderect(search_box):
+            images = self.draw(1)
+        else:
+            images = self.draw(0)
+
+        for i in range(len(images)):
+            win.blit(images[i], (self.position[0] + (i * 20 * self.scale) + 2 * self.scale, self.position[1] + 16 * self.scale))
+        
+        text = FONT["24"].render(
+            self.text, 1, (255, 255, 255))
+        win.blit(text, (self.position[0] + 4 * self.scale + 3 * self.scale, self.position[1] + 16 * self.scale + 4 * self.scale, 4 * self.scale, self.scale))
+
+        if self.blink == 60:
+            self.blink = 0
+        elif self.blink > 30:
+            self.blink += 1
+        elif self.clicked == 1:
+            pygame.draw.rect(
+                win, (255, 255, 255), (self.position[0] + 4 * self.scale + 3 * self.scale + self.text_pos * 4 * self.scale, self.position[1] + 16 * self.scale + 13 * self.scale, 4 * self.scale, self.scale))
+            self.blink += 1
+
+        if cursor.pressed is None:
+            self.clicked = 0
+        elif cursor.box.colliderect(search_box) and cursor.pressed[0]:
+            self.clicked = 1
+        elif cursor.pressed[0]:
+            self.clicked = 0
+    
+    def handle_event(self, event) -> None:
+        if self.clicked == 1:
+            if event.key == pygame.K_BACKSPACE:
+                if self.text_pos > 0:
+                    self.text_pos -= 1
+                    self.text = self.text[:-1]
+            else:
+                self.text_pos += 1
+                self.text += event.unicode
 
 def main():
     inventory_list = [
@@ -584,6 +701,8 @@ def main():
     ]
     inventory_engine = Inventory_Engine(inventory_list)
 
+    search_bar = Search_Bar(21, 50, 600, 3)                         # Search bar width, x, y, scale
+
     cursor = Cursor()
 
     run = True
@@ -594,18 +713,22 @@ def main():
                 print("Program closed by user.")
                 pygame.quit()
                 os._exit(1)
+            # handling event of searching
+            if event.type == pygame.KEYDOWN:
+                search_bar.handle_event(event)
 
         pygame.event.get()
-        keys = pygame.key.get_pressed()
-        if keys[K_c]:
+        keys = pygame.key.get_pressed()                             # Should only react to c and w when not selected on Search Bar
+        if keys[K_c] and search_bar.clicked == 0:
             inventory_engine.inventory_list[0].add_item(
                 Item(random.choice(list(ITEMS.keys())), 1))
-        if keys[K_w]:
+        if keys[K_w] and search_bar.clicked == 0:
             inventory_engine.inventory_list[0].add_item(
                 Weapon(random.choice(list(WEAPONS.keys())), 1))
         win.fill((0, 0, 0))
-        inventory_engine.update(cursor)
-        cursor.update(keys)
+        search_bar.update(cursor)                                   # Search bar's update function here
+        inventory_engine.update(cursor, search_bar.text)            # Added new parameters to accomodate search
+        cursor.update(keys, search_bar.position, search_bar.scale)  # Added new parameters to accomodate search
 
         clock.tick(FPS)  # Pauses to keep track with FPS constant
         pygame.display.update()
